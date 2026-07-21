@@ -1,0 +1,5 @@
+I will begin with LLM pretraining and post training because they provide an excellent foundation for understanding modern deep learning systems. Most of the implementations in this repository are inspired by the work of Andrej Karpathy, but everything is written and studied to build a deep understanding rather than simply reproducing results.
+
+This repository is not about ai assisted coding or building applications as quickly as possible. The goal is to understand how neural networks are trained, optimized, and scaled by implementing the core algorithms from scratch whenever practical.
+
+Although the first focus is on large language models, this is **not an LLM only repository**. It is a repository about **training neural networks**. In the future, I may implement models for other modalities such as computer vision, audio, and multimodal learning. However, the core principles behind pretraining, post  training, optimization, and distributed training are largely shared across these domains, which is why I am starting with LLMs.
