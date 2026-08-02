@@ -29,5 +29,23 @@ def adamw_step_fused(
 def muon_step_fused(
         stack_grad:Tensor,
         stack_params:Tensor,
-):
+        momentum_buffer:Tensor,
+        second_moment_buffer:Tensor,
+        momentum_t:Tensor,
+        lr_t:Tensor,
+        wd_t:Tensor,
+        beta_2:Tensor,
+        ns_steps:int,
+        red_dim:int
+)->None:
+    momentum = momentum_t.to(stack_grad.dtype)
+    momentum_buffer.lerp(stack_grad, 1 - momentum)
+    g = stack_grad.lerp(momentum_buffer, momentum)
+
+    # Polar express 
+    x = g.bfloat16() if COMPUTE_DTYPE == torch.bfloat16 else g
+    x = x / (x.norm(dim=(-2, -1), keepdim=True) * 1.01 + 1e-6)
+    
+
+
 
