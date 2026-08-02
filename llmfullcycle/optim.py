@@ -25,7 +25,7 @@ def adamw_step_fused(
     step_size = lr / bias_correction1
     p.add_(exp_avg / denom, alpha=-step_size)
 
-
+@torch.compile(dynamic=False, fullgraph=True)
 def muon_step_fused(
         stack_grad:Tensor,
         stack_params:Tensor,
@@ -45,7 +45,7 @@ def muon_step_fused(
     # Polar express 
     x = g.bfloat16() if COMPUTE_DTYPE == torch.bfloat16 else g
     x = x / (x.norm(dim=(-2, -1), keepdim=True) * 1.01 + 1e-6)
-    
+
 
 
 
