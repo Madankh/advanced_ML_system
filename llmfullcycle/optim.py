@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 from torch import Tensor
-from llmfullcycle.common import COMPUTE_DTYPE
+from llmfullcycle.helper import COMPUTE_DTYPE
 
 @torch.compile(dynamic=False, fullgraph=True)
 def adamw_step_fused(
@@ -18,5 +18,16 @@ def adamw_step_fused(
     ):
     p.mul_(1 - lr * wd_t)
     exp_avg.lerp(grad, 1 - beta_1)
-    
+    exp_avg_sqr.lerp(grad.square(), 1 - beta_2)
+    bias_correction1 = 1 - beta_1 ** step_t
+    bias_correction2 = 1 - beta_2 ** step_t
+    denom = (exp_avg_sqr / bias_correction2).sqrt() + eps_t
+    step_size = lr / bias_correction1
+    p.add_(exp_avg / denom, alpha=-step_size)
+
+
+def muon_step_fused(
+        stack_grad:Tensor,
+        stack_params:Tensor,
+):
 
