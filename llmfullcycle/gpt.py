@@ -42,10 +42,10 @@ class Attention(nn.Module):
         self.n_embed = config.n_embed
         self.n_kv_head = config.n_kv_head
         self.head_dim = self.n_embed // self.n_kv_head
-        self.wq = Linear(n_embed, n_head * n_head, bias=False)
-        self.wk = Linear(n_embed, n_kv_head * n_head, bias=False)
-        self.wv = Linear(n_embed, n_kv_head * n_head, bias=False)
-        self.c = Linear(n_embed, n_embed, bias=False)
+        self.wq = Linear(self.n_embed, self.n_head * self.head_dim, bias=False)
+        self.wk = Linear(self.n_embed, self.n_kv_head * self.head_dim, bias=False)
+        self.wv = Linear(self.n_embed, self.n_kv_head * self.head_dim, bias=False)
+        self.c = Linear(self.n_embed, self.n_embed, bias=False)
         self.ve_gate_channels = 12 
         self.ve_gate = Linear(self.ve_gate_channels, self.n_kv_head, bias=False) if has_ve(layer_idx, config.n_layer) else None
 
@@ -111,10 +111,10 @@ class GPT(nn.Module):
         self.paddle_vocab_size = ((config.vocab_size + pad_vocab_to - 1) // pad_vocab_to) * pad_vocab_to
         
         self.transformer = nn.ModuleDict({
-            "wte":nn.Embedding(self.paddle_vocab_size, n_embed),
+            "wte":nn.Embedding(self.paddle_vocab_size, self.config.n_embed),
             "h": nn.ModuleList([BLOCK(config, layer_idx) for layer_idx in range(config.n_layer)])
         })
-        self.lm_head = Linear(config.n_embed, self.paddle_vocab_size)
+        self.lm_head = Linear(self.config.n_embed, self.paddle_vocab_size)
 
         self.resid_lambdas = nn.Parameters(torch.ones(config.n_layer))
         self.x0_lambdas = nn.Parameters(torch.zeros(config.n_layer))
@@ -124,12 +124,15 @@ class GPT(nn.Module):
 
         self.backout_lambda = nn.Parameters(0.2 * torch.ones(1))
 
-        self.head_dim = config.n_embed // config.n_head
-        self.kv_head = self.n_kv_head * head_dim
+        self.head_dim = self.config.n_embed // self.config.n_head
+        self.kv_head = self.config.n_kv_head * self.head_dim
         self.value_embedding = nn.ModuleDict({
-            str(i) : nn.Embedding(self.paddle_vocab_size, self.kv_head) if i in range(self.n_layer) if has_ve(i,n_layer) else None
+            str(i): nn.Embedding(self.paddle_vocab_size, self.kv_head)
+            for i in range(self.config.n_layer)
+            if has_ve(i, self.config.n_layer)
         })
-        self.rotary_seq_len = self.seq_len * 10
+
+        self.rotary_seq_len = self.config.seq_len * 10
         cos,sin = self._precompute_rotary_embedding(self.rotary_seq_len, self.head_dim)
         self.register_buffer("cos", cos, persistent=False)
         self.register_buffer("sin", sin, persistent=False)
@@ -141,8 +144,29 @@ class GPT(nn.Module):
 
         n_embed = self.config.n_embed
         s =  3 ** 0.5 * n_embed** -0.5
-        for block in transformer.h:
+        for block in self.transformer.h:
             torch.nn.init.uniform_(block.attention.wq.weight,  -s, s)
+            torch.nn.init.uniform_(block.attention.wk.weight,  -s, s)
+            torch.nn.init.uniform_(block.attention.wv.weight, -s, s)
+            torch.nn.init.zeros_(block.attention.c.weight)
+            torch.nn.init.uniform_(block.mlp.layer1.weight, -s * 0.4, s * 0.4)
+            torch.nn.init.zeros_(block.mlp.layer2.weight)
+
+        n_layer = self.config.n_layer
+        for i in range(n_layer):
+            self.resid_lambdas.data[i] = 1.15 - (0.10 * i / max(n_layer - 1, 1))
+
+        for i in range(n_layer):
+            self.x0_lambdas.data[i] = 0.20 - (0.15 * i / max(n_layer - 1, 1))
+
+        for ve in self.value_embedding.values():
+            torch.nn.init.normal_(ve.weight, mean=0.0, std=0.08)
+
+        for block in self.transformer.h:
+            if block.attention.ve_gate is not None:
+                torch.nn.init.normal_(block.attention.ve_gate.weight, mean=0.0, std=0.08)
+        head_dim = self.config.n_embed // self.config.n_head
+        cos, sin = self._precompute_rotary_embedding(self.rotary_seq_len, head_dim)
 
 
         
