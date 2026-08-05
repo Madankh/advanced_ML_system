@@ -168,7 +168,27 @@ class GPT(nn.Module):
         head_dim = self.config.n_embed // self.config.n_head
         cos, sin = self._precompute_rotary_embedding(self.rotary_seq_len, head_dim)
 
+    def _precompute_rotary_embedding(self, seq_len, head_dim):
+        pass
 
+    def _compute_window_size(self, config):
+        pass
+
+    def get_device(self):
+        return self.transformer.wte.weight.device
+    
+    def estimate_flops(self):
+
+        pass
+
+    def num_scaling_params(self):
+        pass
+
+    def setup_optimizer(self, unembedding_lr=0.004, embedding_lr=0.02, weight_decay=0.0, scaler_lr=0.5):
+        pass
+
+    def forward(self, idx, targets=None, kv_cache=None):
+        pass
         
 
 
