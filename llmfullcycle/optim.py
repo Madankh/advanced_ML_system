@@ -47,5 +47,39 @@ def muon_step_fused(
     x = x / (x.norm(dim=(-2, -1), keepdim=True) * 1.01 + 1e-6)
 
 
+class MuonAdamOptimizer(torch.optim.Optimizer):
+    def __init__(self, param_groups:list[dict]):
+        pass
+
+    def _step_adamw(self, group:dict) -> None:
+        pass
+
+    def _step_muon(self, group:dict) -> None:
+        pass
+
+    @torch.no_grad()
+    def step(self):
+        pass
+
+
+class DistAdamMuonOptimizer(torch.optim.Optimizer):
+    def __init__(self, param_groups:list[dict]):
+        pass
+
+    def _reduce_adamw(self, group:dict)-> None:
+        pass
+
+    def _reduce_muon(self, group:dict)-> None:
+        pass
+
+    def _compute_adamw(self, group:dict, info:dict, gather_list:list, rank:int, world_size:int)-> None:
+        pass
+
+    def _compute_muon(self, group:dict, info:dict, gather_list:list, rank:int, world_size:int)-> None:
+        pass
+
+    def finish_gathers(self, gather_list:list) -> None:
+        pass
+
 
 
