@@ -4,13 +4,13 @@ import torch.nn.functional as F
 from dataclasses import dataclass
 
 config = {
-    vocab_size:int=50688,
-    seq_len:int = 4096,
-    n_head:int = 12,
-    n_layer:int  6,
-    n_embed:int = 768,
-    n_kv_head:int = 6,
-    window_pattern:str="SSSL"
+    "vocab_size": 50688,
+    "seq_len": 4096,
+    "n_head": 12,
+    "n_layer": 6,
+    "n_embed": 768,
+    "n_kv_head": 6,
+    "window_pattern": "SSSL",
 }
 
 class Linear(nn.Module):
