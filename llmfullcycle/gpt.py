@@ -17,10 +17,8 @@ class Linear(nn.Module):
     def __init__(self, x):
         return F.linear(x, self.weight.to(dtype=x.dtype))
 
-
 def norm(x):
     return F.rms_norm(x, (x.size(-1)))
-
 
 def apply_rotation(x, cos_sin):
     assert x.ndim() == 4
@@ -75,7 +73,6 @@ class Attention(nn.Module):
         y = self.c(y)
         return y
 
-
 class MLP(nn.Module):
     def __init__(self , config):
         super().__init__()
@@ -102,7 +99,6 @@ class BLOCK(nn.Module):
         x = x + self.mlp(norm(x))
         return x
     
-
 class GPT(nn.Module):
     def __init__(self, config, pad_vocab_to=64):
         super().__init__()
@@ -167,6 +163,7 @@ class GPT(nn.Module):
                 torch.nn.init.normal_(block.attention.ve_gate.weight, mean=0.0, std=0.08)
         head_dim = self.config.n_embed // self.config.n_head
         cos, sin = self._precompute_rotary_embedding(self.rotary_seq_len, head_dim)
+        
 
     def _precompute_rotary_embedding(self, seq_len, head_dim):
         pass
