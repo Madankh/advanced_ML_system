@@ -36,16 +36,42 @@ parser.add_argument("--max_seq_len", type=int, default=2048, help="")
 parser.add_argument("--window_pattern", type=str, default="SSSL", help="window pattern")
 
 # tranining horizon
-parser.add_argument("--")
-parser.add_argument("--")
+parser.add_argument("--num-iterations", type=int, default=-1, help="explicit of optimization steps")
+parser.add_argument("--target-flops", type=float, default=-1.0, help="calculate thge num_iterations to reach target_flops")
+parser.add_argument("--target-param-data-ratio", type=float, default=12,help="calculate num_iterations to maintain data:param ratio (Chinchilla=20, -1 = disable)")
 
 # optimization 
+parser.add_argument("--device-batch-size", type=int, default=32, help="per-device batch size. good number to reduce to 16,8,4,... if you OOM on VRAM.")
+parser.add_argument("--total-batch-size", type=int, default=-1, help="total batch size in tokens. decent numbers are e.g. 524288. (-1 = auto-compute optimal)")
+parser.add_argument("--embedding-lr", type=float, default=0.3, help="learning rate for embedding parameters (Adam)")
+parser.add_argument("--unembedding-lr", type=float, default=0.008, help="learning rate for unembedding parameters (Adam)")
+parser.add_argument("--weight-decay", type=float, default=0.28, help="cautious weight decay for the Muon optimizer (for weights)")
+parser.add_argument("--matrix-lr", type=float, default=0.02, help="learning rate for matrix parameters (Muon)")
+parser.add_argument("--scalar-lr", type=float, default=0.5, help="learning rate for scalars (resid_lambdas, x0_lambdas)")
+parser.add_argument("--warmup-steps", type=int, default=40, help="number of steps for LR warmup")
+parser.add_argument("--warmdown-ratio", type=float, default=0.65, help="ratio of iterations for LR warmdown")
+parser.add_argument("--final-lr-frac", type=float, default=0.05, help="final LR as fraction of initial LR")
+parser.add_argument("--resume-from-step", type=int, default=-1, help="resume training from this step (-1 = disable)")
 
-# evaluation
+# Evaluation
+parser.add_argument("--eval-every", type=int, default=250, help="evaluate val bpb every N steps (-1 = disable)")
+parser.add_argument("--eval-tokens", type=int, default=80*524288, help="number of tokens to evaluate val loss on")
+parser.add_argument("--core-metric-every", type=int, default=2000, help="evaluate CORE metric every N steps (-1 = disable)")
+parser.add_argument("--core-metric-max-per-task", type=int, default=500, help="examples per task for CORE metric")
+parser.add_argument("--sample-every", type=int, default=2000, help="sample from model every N steps (-1 = disable)")
+parser.add_argument("--save-every", type=int, default=-1, help="save checkpoints every N steps (-1 = only at end)")
 
 # Output
+parser.add_argument("--model-tag", type=str, default=None, help="override model tag for checkpoint directory name")
+args = parser.parse_args()
+user_config = vars(args).copy()  # for logging
 
 # Compute init and wandb logging
+device_type = autodetect_device_type(args.device_type) if args.device_type == "" else args.device_type
+ddp,ddp_rank,ddp_local_rank,ddp_world_size, device = compute_init(device_type)
+master_process = ddp_rank == 0
+synchronize = torch.cuda.synchronize if device_type == "cuda", else lambda: None
+
 
 # wandb logging init
 
